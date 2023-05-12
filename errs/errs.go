@@ -1,4 +1,4 @@
-package errors
+package errs
 
 import (
 	"fmt"
@@ -7,6 +7,10 @@ import (
 
 // NewExposable creates new ExposableError instance.
 func NewExposable(code int, messages ...any) error {
+	if code == 0 {
+		code = http.StatusInternalServerError
+	}
+
 	if len(messages) == 0 && code >= 100 && code <= 599 {
 		messages = []any{
 			http.StatusText(code),
