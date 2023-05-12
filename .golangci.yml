@@ -1,0 +1,45 @@
+run:
+  go: "1.20"
+linters:
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - cyclop
+    - dupl
+    - errcheck
+    - errname
+    - errorlint
+    - funlen
+    - gci
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gofumpt
+    - gomnd
+    - gosec
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - ireturn
+    - lll
+    - nestif
+    - nilerr
+    - nlreturn
+    - nolintlint
+    - prealloc
+    - reassign
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - testpackage
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl
