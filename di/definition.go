@@ -9,17 +9,17 @@ type Def struct {
 	// Name is a dependency name
 	Name string
 
-	// Lazy is a flag. If true, Build will be executed only on Container.Get() call.
-	Lazy bool
+	// Build builds dependency object
+	Build BuildFn
 
 	// Validate validates dependency definition on add
 	Validate ValidateFn
 
-	// Build builds dependency object
-	Build BuildFn
-
 	// Close finalizes dependency object
 	Close CloseFn
+
+	// Lazy is a flag. If true, Build will be executed only on Container.Get() call.
+	Lazy bool
 
 	obj   any
 	built bool
