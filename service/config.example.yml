@@ -1,0 +1,9 @@
+# This is a core2go-based application config file example
+# with a available properties and example values.
+
+# Common service configs
+service:
+  name: "service_name"
+  title: "Service Name"
+  version: "0.0.1"
+  is_debug: false
