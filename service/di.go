@@ -28,8 +28,8 @@ const (
 )
 
 const (
-	defaultConfigFileName = ".env"
-	defaultConfigFileType = "env"
+	DefaultConfigFileName = "app.yml"
+	DefaultConfigFileType = "yml"
 )
 
 // GetDefaultDIBuilder returns default DI builder
@@ -37,7 +37,7 @@ func GetDefaultDIBuilder() (*di.Builder, error) {
 	builder := &di.Builder{}
 
 	err := builder.Add(
-		DIDefConfigRAW(defaultConfigFileName, defaultConfigFileType),
+		DIDefConfigRAW(DefaultConfigFileName, DefaultConfigFileType),
 		DIDefConfig(),
 		DIDefLogger(),
 		DIDefRouter(),
