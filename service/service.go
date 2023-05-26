@@ -3,9 +3,7 @@ package service
 import (
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"github.com/kukymbr/core2go/di"
-	"github.com/kukymbr/core2go/ginrouter/middlewares"
 	"go.uber.org/zap"
 )
 
@@ -31,23 +29,18 @@ func NewWithDefaultContainer() (*Service, error) {
 	return New(*ctn), nil
 }
 
-// PrepareRouterFn is a function to prepare router before run
-type PrepareRouterFn func(router *gin.Engine, ctn *di.Container) error
-
 // Service is an application based on core2go kit
 type Service struct {
 	ctn *di.Container
 
 	logger *zap.Logger
-	router *gin.Engine
 	config *Config
-
-	prepareRouterFn PrepareRouterFn
+	runner Runner
 
 	initialized bool
 }
 
-// Init initializes App without starting the server
+// Init initializes App without starting the runner
 func (s *Service) Init() error {
 	if s.initialized {
 		return nil
@@ -57,16 +50,7 @@ func (s *Service) Init() error {
 
 	s.logger = DIGetLogger(s.ctn)
 	s.config = DIGetConfig(s.ctn)
-
-	s.router = DIGetRouter(s.ctn)
-	s.router.Use(middlewares.SetDIContainer(s.ctn))
-
-	if s.prepareRouterFn != nil {
-		err := s.prepareRouterFn(s.router, s.ctn)
-		if err != nil {
-			return fmt.Errorf("failed to prepare router: %w", err)
-		}
-	}
+	s.runner = DIGetRunner(s.ctn)
 
 	return nil
 }
@@ -85,9 +69,9 @@ func (s *Service) Run() error {
 		}
 	}()
 
-	s.logger.Info("starting gin server")
+	s.logger.Info("starting the runner")
 
-	err = s.router.Run(fmt.Sprintf(":%d", s.config.Service.Port))
+	err = s.runner.Run()
 	if err != nil {
 		s.logger.Error(err.Error())
 	}
@@ -103,9 +87,4 @@ func (s *Service) Close() error {
 	}
 
 	return nil
-}
-
-// SetPrepareRouterFn sets init router hook
-func (s *Service) SetPrepareRouterFn(fn PrepareRouterFn) {
-	s.prepareRouterFn = fn
 }

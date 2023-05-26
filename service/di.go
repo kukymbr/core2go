@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kukymbr/core2go/di"
 	ginsrv "github.com/kukymbr/core2go/ginrouter"
+	"github.com/kukymbr/core2go/ginrouter/middlewares"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -14,17 +15,21 @@ import (
 
 // Default dependencies names
 const (
+	diKeyPrefix = "core2go_"
+
 	// DIKeyLogger is a key for logger instance
-	DIKeyLogger = "core2go_logger"
+	DIKeyLogger = diKeyPrefix + "logger"
 
 	// DIKeyConfigRAW is key for non-structured config in viper object
-	DIKeyConfigRAW = "core2go_config_raw"
+	DIKeyConfigRAW = diKeyPrefix + "config_raw"
 
 	// DIKeyConfig is a key for initialized Config instance
-	DIKeyConfig = "core2go_config"
+	DIKeyConfig = diKeyPrefix + "config"
 
 	// DIKeyRouter is a key for gin router (gin.Engine) instance
-	DIKeyRouter = "core2go_router"
+	DIKeyRouter = diKeyPrefix + "router"
+
+	DIKeyRunner = diKeyPrefix + "runner"
 )
 
 const (
@@ -41,6 +46,7 @@ func GetDefaultDIBuilder() (*di.Builder, error) {
 		DIDefConfig(),
 		DIDefLogger(),
 		DIDefRouter(),
+		DIDefRunnerGin(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("add di definitions: %w", err)
@@ -142,20 +148,37 @@ func DIDefRouter() di.Def {
 		Name: DIKeyRouter,
 		Build: func(ctn *di.Container) (interface{}, error) {
 			mode := gin.ReleaseMode
+			conf := diGetConfigNillable(ctn)
 
-			v, err := ctn.SafeGet(DIKeyConfig)
-			if err == nil {
-				conf := v.(*Config)
-				if conf.Service.IsDebug {
-					mode = gin.DebugMode
-				}
+			if conf != nil && conf.Service.IsDebug {
+				mode = gin.DebugMode
 			}
 
 			gin.SetMode(mode)
 
 			router := ginsrv.GetDefaultRouter(DIGetLogger(ctn))
 
+			router.Use(middlewares.SetDIContainer(ctn))
+
 			return router, nil
+		},
+	}
+}
+
+// DIDefRunnerGin returns service gin router runner definition
+func DIDefRunnerGin() di.Def {
+	return di.Def{
+		Name: DIKeyRunner,
+		Build: func(ctn *di.Container) (interface{}, error) {
+			router := DIGetRouter(ctn)
+			conf := diGetConfigNillable(ctn)
+			addr := ""
+
+			if conf != nil {
+				addr = fmt.Sprintf(":%d", conf.Service.Port)
+			}
+
+			return ginsrv.NewRunner(router, addr), nil
 		},
 	}
 }
@@ -163,6 +186,20 @@ func DIDefRouter() di.Def {
 // endregion DEFAULT DEFINITIONS
 
 // region DEFAULT GETTERS
+
+func diGetConfigNillable(ctn *di.Container) *Config {
+	v, err := ctn.SafeGet(DIKeyConfig)
+	if err != nil {
+		return nil
+	}
+
+	conf, ok := v.(*Config)
+	if !ok {
+		return nil
+	}
+
+	return conf
+}
 
 // DIGetConfigRAW returns non-structured viper config from the DI container
 func DIGetConfigRAW(ctn *di.Container) *viper.Viper {
@@ -182,6 +219,11 @@ func DIGetLogger(ctn *di.Container) *zap.Logger {
 // DIGetRouter returns gin Engine from the DI container
 func DIGetRouter(ctn *di.Container) *gin.Engine {
 	return ctn.Get(DIKeyRouter).(*gin.Engine)
+}
+
+// DIGetRunner returns service runner from the DI container
+func DIGetRunner(ctn *di.Container) Runner {
+	return ctn.Get(DIKeyRunner).(Runner)
 }
 
 // endregion DEFAULT GETTERS
