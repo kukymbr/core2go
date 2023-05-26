@@ -47,7 +47,7 @@ func (c *CommonServiceConfig) GetVersionSafe() (v *version.Version, err error) {
 func (c *CommonServiceConfig) GetVersion() *version.Version {
 	v, err := c.GetVersionSafe()
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	return v

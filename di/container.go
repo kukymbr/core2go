@@ -21,7 +21,7 @@ func (c *Container) Has(name string) bool {
 func (c *Container) Get(name string) (obj any) {
 	obj, err := c.SafeGet(name)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	return obj
