@@ -73,10 +73,10 @@ func (s *Service) Run() error {
 
 	err = s.runner.Run()
 	if err != nil {
-		s.logger.Error(err.Error())
+		return fmt.Errorf("runner run: %w", err)
 	}
 
-	return fmt.Errorf("run gin server: %w", err)
+	return nil
 }
 
 // Close finalizes the App
