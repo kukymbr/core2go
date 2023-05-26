@@ -39,8 +39,11 @@ func (c *CommonServiceConfig) GetVersionSafe() (v *version.Version, err error) {
 	}
 
 	c.version, err = version.NewVersion(c.Version)
+	if err != nil {
+		return nil, fmt.Errorf("parse version: %w", err)
+	}
 
-	return nil, fmt.Errorf("parse version: %w", err)
+	return c.version, nil
 }
 
 // GetVersion returns parsed service's version and panics in case of error.
