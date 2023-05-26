@@ -147,6 +147,18 @@ func DIDefRouter() di.Def {
 	return di.Def{
 		Name: DIKeyRouter,
 		Build: func(ctn *di.Container) (interface{}, error) {
+			mode := gin.ReleaseMode
+
+			v, err := ctn.SafeGet(DIKeyConfig)
+			if err == nil {
+				conf := v.(*Config)
+				if conf.Service.IsDebug {
+					mode = gin.DebugMode
+				}
+			}
+
+			gin.SetMode(mode)
+
 			router := ginsrv.GetDefaultRouter(DIGetLogger(ctn))
 
 			return router, nil
