@@ -54,22 +54,25 @@ func (c *CommonServiceConfig) GetVersion() *version.Version {
 }
 
 // ReadConfigFromFile reads configuration file values to the new Config instance
-func ReadConfigFromFile(file string, fileType string) (*Config, error) {
-	vpr := viper.New()
+func ReadConfigFromFile(file string, fileType string) (vpr *viper.Viper, err error) {
+	vpr = viper.New()
 
 	vpr.SetConfigFile(file)
 	vpr.SetConfigType(fileType)
 
-	err := vpr.ReadInConfig()
+	err = vpr.ReadInConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s (type=%s): %w", file, fileType, err)
 	}
 
-	conf := &Config{}
+	return vpr, nil
+}
 
-	err = vpr.Unmarshal(&conf)
+// UnmarshalConfig unmarshal viper to Config
+func UnmarshalConfig(raw *viper.Viper) (conf *Config, err error) {
+	err = raw.Unmarshal(&conf)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config file %s (type=%s): %w", file, fileType, err)
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
 	return conf, nil

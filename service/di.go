@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kukymbr/core2go/di"
 	ginsrv "github.com/kukymbr/core2go/ginrouter"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -15,6 +16,9 @@ import (
 const (
 	// DIKeyLogger is a key for logger instance
 	DIKeyLogger = "core2go_logger"
+
+	// DIKeyConfigRAW is key for non-structured config in viper object
+	DIKeyConfigRAW = "core2go_config_raw"
 
 	// DIKeyConfig is a key for initialized Config instance
 	DIKeyConfig = "core2go_config"
@@ -33,7 +37,8 @@ func GetDefaultDIBuilder() (*di.Builder, error) {
 	builder := &di.Builder{}
 
 	err := builder.Add(
-		DIDefConfig(defaultConfigFileName, defaultConfigFileType),
+		DIDefConfigRAW(defaultConfigFileName, defaultConfigFileType),
+		DIDefConfig(),
 		DIDefLogger(),
 		DIDefRouter(),
 	)
@@ -46,12 +51,24 @@ func GetDefaultDIBuilder() (*di.Builder, error) {
 
 // region DEFAULT DEFINITIONS
 
+// DIDefConfigRAW is a non-structured config in viper object
+func DIDefConfigRAW(file string, fileType string) di.Def {
+	return di.Def{
+		Name: DIKeyConfigRAW,
+		Build: func(ctn *di.Container) (interface{}, error) {
+			return ReadConfigFromFile(file, fileType)
+		},
+	}
+}
+
 // DIDefConfig returns service Config definition
-func DIDefConfig(file string, fileType string) di.Def {
+func DIDefConfig() di.Def {
 	return di.Def{
 		Name: DIKeyConfig,
 		Build: func(ctn *di.Container) (interface{}, error) {
-			return ReadConfigFromFile(file, fileType)
+			raw := DIGetConfigRAW(ctn)
+
+			return UnmarshalConfig(raw)
 		},
 	}
 }
@@ -140,6 +157,11 @@ func DIDefRouter() di.Def {
 // endregion DEFAULT DEFINITIONS
 
 // region DEFAULT GETTERS
+
+// DIGetConfigRAW returns non-structured viper config from the DI container
+func DIGetConfigRAW(ctn *di.Container) *viper.Viper {
+	return ctn.Get(DIKeyConfigRAW).(*viper.Viper)
+}
 
 // DIGetConfig returns Config from the DI container
 func DIGetConfig(ctn *di.Container) *Config {
