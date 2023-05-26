@@ -96,14 +96,8 @@ func DIDefLogger() di.Def {
 
 			if conf != nil {
 				logger = logger.With(
-					zap.Field{
-						Key:    "service_name",
-						String: conf.Service.Name,
-					},
-					zap.Field{
-						Key:    "service_version",
-						String: conf.Service.GetVersion().String(),
-					},
+					zap.String("service_name", conf.Service.Name),
+					zap.String("service_version", conf.Service.GetVersion().String()),
 				)
 			}
 
