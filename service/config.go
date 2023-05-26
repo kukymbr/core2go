@@ -9,7 +9,8 @@ import (
 
 // Config is a Service's configuration struct.
 type Config struct {
-	Service *CommonServiceConfig `mapstructure:"service"`
+	Service CommonServiceConfig `mapstructure:"service"`
+	Redis   RedisConfig         `mapstructure:"redis"`
 }
 
 // CommonServiceConfig is a common service options
@@ -54,6 +55,14 @@ func (c *CommonServiceConfig) GetVersion() *version.Version {
 	}
 
 	return v
+}
+
+// RedisConfig is a redis connection config
+type RedisConfig struct {
+	Host     string
+	Username string
+	Password string
+	DB       int
 }
 
 // ReadConfigFromFile reads configuration file values to the new Config instance
