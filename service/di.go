@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/kukymbr/core2go/di"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -101,6 +102,11 @@ func DIGetRouter(ctn *di.Container) *gin.Engine {
 // DIGetRunner returns service runner from the DI container
 func DIGetRunner(ctn *di.Container) Runner {
 	return ctn.Get(DIKeyRunner).(Runner)
+}
+
+// DIGetRedis returns Redis client from the DI container
+func DIGetRedis(ctn *di.Container) *redis.Client {
+	return ctn.Get(DIKeyRedis).(*redis.Client)
 }
 
 // endregion DEFAULT GETTERS
