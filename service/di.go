@@ -75,8 +75,8 @@ func diGetConfigNillable(ctn *di.Container) *Config {
 }
 
 // DIGetBaseContext returns base service context
-func DIGetBaseContext(ctn *di.Container) BaseContext {
-	return ctn.Get(DIKeyBaseContext).(BaseContext)
+func DIGetBaseContext(ctn *di.Container) ContextWithCancel {
+	return ctn.Get(DIKeyBaseContext).(ContextWithCancel)
 }
 
 // DIGetConfigRAW returns non-structured viper config from the DI container

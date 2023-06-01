@@ -1,10 +1,21 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/kukymbr/core2go/di"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
+)
+
+var (
+	errTerminated = errors.New("terminated")
+	errCanceled   = errors.New("canceled")
 )
 
 // New creates new Service instance with the specified DI container.
@@ -33,9 +44,10 @@ func NewWithDefaultContainer() (*Service, error) {
 type Service struct {
 	ctn *di.Container
 
-	logger *zap.Logger
-	config *Config
-	runner Runner
+	baseContext ContextWithCancel
+	logger      *zap.Logger
+	config      *Config
+	runner      Runner
 
 	initialized bool
 }
@@ -48,6 +60,7 @@ func (s *Service) Init() error {
 
 	s.initialized = true
 
+	s.baseContext = DIGetBaseContext(s.ctn)
 	s.logger = DIGetLogger(s.ctn)
 	s.config = DIGetConfig(s.ctn)
 	s.runner = DIGetRunner(s.ctn)
@@ -69,11 +82,58 @@ func (s *Service) Run() error {
 		}
 	}()
 
-	s.logger.Info("starting the runner")
+	return s.run()
+}
 
-	err = s.runner.Run()
-	if err != nil {
-		return fmt.Errorf("runner run: %w", err)
+func (s *Service) run() error {
+	shutdownChan := make(chan os.Signal, 1)
+	signal.Notify(shutdownChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+
+	errGroup, ctx := errgroup.WithContext(s.baseContext.GetContext())
+
+	errGroup.Go(func() error {
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("context error: %w", err)
+		}
+
+		defer s.baseContext.GetCancelFn()()
+
+		s.logger.Info("starting the runner")
+
+		err := s.runner.Run()
+		if err != nil {
+			return fmt.Errorf("runner run: %w", err)
+		}
+
+		return nil
+	})
+
+	errGroup.Go(func() error {
+		for {
+			select {
+			case sig := <-shutdownChan:
+				s.logger.Info("got shutdown signal: " + sig.String())
+				s.baseContext.GetCancelFn()
+
+				return errTerminated
+
+			case <-s.baseContext.GetContext().Done():
+				err := s.baseContext.GetContext().Err()
+				if errors.Is(err, context.Canceled) {
+					err = errCanceled
+				}
+
+				return err
+			}
+		}
+	})
+
+	err := errGroup.Wait()
+
+	if err != nil && !errors.Is(err, errTerminated) && !errors.Is(err, errCanceled) {
+		s.logger.Error(err.Error())
+
+		return fmt.Errorf("error group: %w", err)
 	}
 
 	return nil
