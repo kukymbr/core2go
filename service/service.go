@@ -113,7 +113,7 @@ func (s *Service) run() error {
 			select {
 			case sig := <-shutdownChan:
 				s.logger.Info("got shutdown signal: " + sig.String())
-				s.baseContext.GetCancelFn()
+				s.baseContext.GetCancelFn()()
 
 				return errTerminated
 
