@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kukymbr/core2go/di"
 	ginsrv "github.com/kukymbr/core2go/ginrouter"
 	"github.com/kukymbr/core2go/ginrouter/middlewares"
@@ -182,6 +183,31 @@ func DIDefRedis() di.Def {
 				err := client.Close()
 
 				return fmt.Errorf("close redis: %w", err)
+			}
+
+			return nil
+		},
+	}
+}
+
+// DIDefPostgresPgx returns default pgx connection dependency definition.
+func DIDefPostgresPgx() di.Def {
+	return di.Def{
+		Name: DIKeyPostgresPgx,
+		Build: func(ctn *di.Container) (any, error) {
+			conf := DIGetConfig(ctn)
+
+			pgpool, err := pgxpool.New(context.Background(), conf.Postgres.AsURL().String())
+			if err != nil {
+				return nil, fmt.Errorf("%s dependency build: %w", DIKeyPostgresPgx, err)
+			}
+
+			return pgpool, nil
+		},
+		Close: func(obj any) error {
+			pgpool, ok := obj.(*pgxpool.Pool)
+			if ok && pgpool != nil {
+				pgpool.Close()
 			}
 
 			return nil

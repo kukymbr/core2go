@@ -2,15 +2,19 @@ package service
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/hashicorp/go-version"
 	"github.com/spf13/viper"
 )
 
+type Strings map[string]string
+
 // Config is a Service's configuration struct.
 type Config struct {
-	Service CommonServiceConfig `mapstructure:"service"`
-	Redis   RedisConfig         `mapstructure:"redis"`
+	Service  CommonServiceConfig `mapstructure:"service"`
+	Redis    RedisConfig         `mapstructure:"redis"`
+	Postgres PostgresConfig      `mapstructure:"postgres"`
 }
 
 // CommonServiceConfig is a common service options
@@ -59,10 +63,37 @@ func (c *CommonServiceConfig) GetVersion() *version.Version {
 
 // RedisConfig is a redis connection config
 type RedisConfig struct {
-	Host     string
-	Username string
-	Password string
-	DB       int
+	Host     string `mapstructure:"host" example:"127.0.0.1:6379"`
+	Username string `mapstructure:"username" example:"redis_user"`
+	Password string `mapstructure:"password" example:"redis_password"`
+	DB       int    `mapstructure:"db" example:"0"`
+}
+
+// PostgresConfig is a Postgres connection config
+type PostgresConfig struct {
+	Host     string  `mapstructure:"host" example:"127.0.0.1:5432"`
+	Username string  `mapstructure:"username" example:"postgres"`
+	Password string  `mapstructure:"password" example:"postgres_password"`
+	DB       string  `mapstructure:"db" example:"dbname"`
+	Options  Strings `mapstructure:"options" example:"{sslmode:verify-ca, pool_max_conns:10}"`
+}
+
+// AsURL returns PostgresConfig as an url.URL object
+func (c *PostgresConfig) AsURL() *url.URL {
+	query := &url.Values{}
+
+	for key, val := range c.Options {
+		query.Add(key, val)
+	}
+
+	return &url.URL{
+		Scheme:   "postgres",
+		Host:     c.Host,
+		Path:     "/" + c.DB,
+		RawPath:  "/" + url.QueryEscape(c.DB),
+		User:     url.UserPassword(c.Username, c.Password),
+		RawQuery: query.Encode(),
+	}
 }
 
 // ReadConfigFromFile reads configuration file values to the new Config instance

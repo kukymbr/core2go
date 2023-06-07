@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kukymbr/core2go/di"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -34,6 +35,9 @@ const (
 
 	// DIKeyRedis is a key for default redis instance
 	DIKeyRedis = diKeyPrefix + "redis"
+
+	// DIKeyPostgresPgx is a key for default postgres pgx connection instance
+	DIKeyPostgresPgx = diKeyPrefix + "postgres_pgx"
 )
 
 const (
@@ -107,6 +111,11 @@ func DIGetRunner(ctn *di.Container) Runner {
 // DIGetRedis returns Redis client from the DI container
 func DIGetRedis(ctn *di.Container) *redis.Client {
 	return ctn.Get(DIKeyRedis).(*redis.Client)
+}
+
+// DIGetPostgresPgx returns postgres pgx connection from the DI container
+func DIGetPostgresPgx(ctn *di.Container) *pgxpool.Conn {
+	return ctn.Get(DIKeyPostgresPgx).(*pgxpool.Conn)
 }
 
 // endregion DEFAULT GETTERS
