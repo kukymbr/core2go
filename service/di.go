@@ -114,8 +114,8 @@ func DIGetRedis(ctn *di.Container) *redis.Client {
 }
 
 // DIGetPostgresPgx returns postgres pgx connection from the DI container
-func DIGetPostgresPgx(ctn *di.Container) *pgxpool.Conn {
-	return ctn.Get(DIKeyPostgresPgx).(*pgxpool.Conn)
+func DIGetPostgresPgx(ctn *di.Container) *pgxpool.Pool {
+	return ctn.Get(DIKeyPostgresPgx).(*pgxpool.Pool)
 }
 
 // endregion DEFAULT GETTERS
