@@ -24,7 +24,7 @@ func NewExposable(code int, messages ...any) error {
 }
 
 // ExposableError is an error to expose in the user's interface.
-// If Localized field is not empty, interface should use it to show to the user.
+// If Localized field is not empty, an interface should use it to show to the user.
 type ExposableError struct {
 	Code      int    `json:"code" example:"404"`
 	Message   string `json:"message" example:"err.notfound"`

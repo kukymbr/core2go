@@ -25,10 +25,14 @@ func New(ctn di.Container) *Service {
 	}
 }
 
-// NewWithDefaultContainer creates new Service instance using the default container.
+// NewWithDefaultContainer creates a new Service instance using the default container.
 func NewWithDefaultContainer() (*Service, error) {
 	builder, err := GetDefaultDIBuilder()
 	if err != nil {
+		return nil, err
+	}
+
+	if err := builder.Add(DIDefRouter(), DIDefRunnerGin()); err != nil {
 		return nil, err
 	}
 

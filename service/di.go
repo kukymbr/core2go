@@ -21,7 +21,7 @@ const (
 	// DIKeyLogger is a key for logger instance
 	DIKeyLogger = diKeyPrefix + "logger"
 
-	// DIKeyConfigRAW is key for non-structured config in viper object
+	// DIKeyConfigRAW is key for non-structured config in a viper object
 	DIKeyConfigRAW = diKeyPrefix + "config_raw"
 
 	// DIKeyConfig is a key for initialized Config instance
@@ -108,7 +108,7 @@ func DIGetRunner(ctn *di.Container) Runner {
 	return ctn.Get(DIKeyRunner).(Runner)
 }
 
-// DIGetRedis returns Redis client from the DI container
+// DIGetRedis returns a Redis client from the DI container
 func DIGetRedis(ctn *di.Container) *redis.Client {
 	return ctn.Get(DIKeyRedis).(*redis.Client)
 }
