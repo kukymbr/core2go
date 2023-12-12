@@ -53,7 +53,41 @@ func TestBuilder_Build_WhenValid_ExpectNoError(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBuilder_Build_WhenError_ExpectError(t *testing.T) {
+func TestBuilder_Build_WhenRebuild_ExpectNoDuplicates(t *testing.T) {
+	type testItem struct {
+		name string
+	}
+
+	builder := &di.Builder{}
+
+	err := builder.Add(di.Def{
+		Name: "test",
+		Build: func(ctn *di.Container) (obj any, err error) {
+			return &testItem{name: "test"}, nil
+		},
+	})
+	require.NoError(t, err)
+
+	ctn, err := builder.Build()
+	require.NoError(t, err)
+	require.NotNil(t, ctn)
+
+	ctn, err = builder.Build()
+	require.NoError(t, err)
+	require.NotNil(t, ctn)
+
+	obj1, err := ctn.SafeGet("test")
+	require.NoError(t, err)
+	require.NotNil(t, obj1)
+
+	obj2, err := ctn.SafeGet("test")
+	require.NoError(t, err)
+	require.NotNil(t, obj1)
+
+	assert.Equal(t, obj1, obj2)
+}
+
+func TestBuilder_Add_WhenError_ExpectError(t *testing.T) {
 	builder := &di.Builder{}
 
 	err := builder.Add(
@@ -84,26 +118,56 @@ func TestBuilder_Build_WhenError_ExpectError(t *testing.T) {
 		assert.Error(t, err, i)
 	}
 
-	err = builder.Add(di.Def{
-		Name: "testname3",
-		Build: func(ctn *di.Container) (obj any, err error) {
-			return "testval3", errors.New("failed to build")
-		},
-	})
-	require.NoError(t, err)
-
 	container, err := builder.Build()
-	assert.Error(t, err)
-	assert.Nil(t, container)
 
-	builder = &di.Builder{}
+	assert.NoError(t, err)
+	assert.NotNil(t, container)
+}
 
-	err = builder.Add(di.Def{Name: "testname4"})
-	require.NoError(t, err)
+func TestBuilder_Build_WhenError_ExpectError(t *testing.T) {
+	tests := []di.Def{
+		{
+			Name: "testname1",
+			Build: func(ctn *di.Container) (obj any, err error) {
+				return "testval1", errors.New("failed to build")
+			},
+		},
+		{Name: "testname2"},
+		{
+			Name: "testname3",
+			Build: func(_ *di.Container) (obj any, err error) {
+				panic("test panic")
+			},
+		},
+		{
+			Name: "testname4",
+			Build: func(ctn *di.Container) (obj any, err error) {
+				return ctn.Get("testname_unknown"), nil
+			},
+		},
+		{
+			Name: "testname5",
+			Build: func(ctn *di.Container) (obj any, err error) {
+				return ctn.Get("testname1").(int), nil
+			},
+		},
+	}
 
-	container, err = builder.Build()
-	assert.Error(t, err)
-	assert.Nil(t, container)
+	var container *di.Container
+
+	for i, def := range tests {
+		builder := &di.Builder{}
+		err := builder.Add(def)
+
+		require.NoError(t, err, i)
+
+		assert.NotPanics(t, func() {
+			container, err = builder.Build()
+		})
+
+		assert.Error(t, err)
+		assert.Nil(t, container)
+	}
 }
 
 func TestContainer(t *testing.T) {

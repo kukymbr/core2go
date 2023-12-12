@@ -2,7 +2,20 @@ package di
 
 import (
 	"fmt"
+	"runtime/debug"
 )
+
+// ValidateFn is a dependency validation function
+type ValidateFn func(ctn *Container) (err error)
+
+// BuildFn is a dependency build function
+type BuildFn func(ctn *Container) (obj any, err error)
+
+// CloseFn is a dependency close function
+type CloseFn func(obj any) (err error)
+
+// definitions is a dependencies definitions map
+type definitions map[string]Def
 
 // Def is a dependency definition
 type Def struct {
@@ -26,34 +39,35 @@ type Def struct {
 }
 
 // build builds dependency's object
-func (d *Def) build(ctn *Container) (err error) {
+func (d *Def) build(ctn *Container) error {
 	if d.built {
 		return nil
 	}
-
-	d.built = true
 
 	if d.Build == nil {
 		return fmt.Errorf("%s: %w", d.Name, ErrBuildFunctionMissing)
 	}
 
-	d.obj, err = d.Build(ctn)
+	var buildErr error
 
-	if err != nil {
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				stack := string(debug.Stack())
+				buildErr = fmt.Errorf("build panicked: %v; stack: %s", r, stack)
+			}
+		}()
+
+		d.obj, buildErr = d.Build(ctn)
+	}()
+
+	d.built = true
+
+	if buildErr != nil {
 		d.obj = nil
+
+		return buildErr
 	}
 
-	return err
+	return nil
 }
-
-// definitions is a dependencies definitions map
-type definitions map[string]Def
-
-// ValidateFn is a dependency validation function
-type ValidateFn func(ctn *Container) (err error)
-
-// BuildFn is a dependency build function
-type BuildFn func(ctn *Container) (obj any, err error)
-
-// CloseFn is a dependency close function
-type CloseFn func(obj any) (err error)

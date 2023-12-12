@@ -3,15 +3,20 @@ package di
 import (
 	"errors"
 	"fmt"
+	"sync"
 )
 
 // Container is a dependency container
 type Container struct {
+	mu   sync.RWMutex
 	defs definitions
 }
 
 // Has checks if dependency is registered in Container
 func (c *Container) Has(name string) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	_, ok := c.defs[name]
 
 	return ok
@@ -29,6 +34,9 @@ func (c *Container) Get(name string) (obj any) {
 
 // SafeGet returns built dependency
 func (c *Container) SafeGet(name string) (obj any, err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	def, ok := c.defs[name]
 	if !ok {
 		return nil, fmt.Errorf("%s: %w", name, ErrDefinitionNotFound)
@@ -48,11 +56,17 @@ func (c *Container) SafeGet(name string) (obj any, err error) {
 
 // Len returns count of definitions in the Container
 func (c *Container) Len() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	return len(c.defs)
 }
 
 // Close finalizes dependencies
 func (c *Container) Close() (err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	for _, def := range c.defs {
 		if !def.built {
 			continue

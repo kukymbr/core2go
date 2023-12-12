@@ -41,7 +41,7 @@ func (b *Builder) Build() (*Container, error) {
 
 		if !def.Lazy {
 			if err := def.build(b.ctn); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("%s dependency build failed: %w", def.Name, err)
 			}
 
 			b.ctn.defs[name] = def
