@@ -1,7 +1,6 @@
 all:
 	make prepare
 	make test
-	make build
 
 prepare:
 	go mod tidy
@@ -16,10 +15,6 @@ test:
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 	rm -f coverage.out
-
-build:
-	go build ./...
-	go mod tidy
 
 clean:
 	go clean
