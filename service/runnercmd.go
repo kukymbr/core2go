@@ -14,21 +14,14 @@ type Command interface {
 }
 
 // NewCommandRunner creates new CLI command Service Runner.
-func NewCommandRunner(command Command) *CommandRunner {
-	return &CommandRunner{command: command}
-}
+func NewCommandRunner(command Command) Runner {
+	return NewCustomRunner(func(ctx context.Context, _ *di.Container) error {
+		if err := command.ExecuteContext(ctx); err != nil {
+			return fmt.Errorf("command execute: %w", err)
+		}
 
-// CommandRunner is a Service Runner, executing the CLI command.
-type CommandRunner struct {
-	command Command
-}
-
-func (r *CommandRunner) Run(ctx context.Context, _ *di.Container) error {
-	if err := r.command.ExecuteContext(ctx); err != nil {
-		return fmt.Errorf("command execute: %w", err)
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // NopCommand is a Command doing nothing.

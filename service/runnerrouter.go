@@ -13,23 +13,15 @@ type Router interface {
 	RunWithContext(ctx context.Context) error
 }
 
-// NewRouterRunner creates new RouterRunner instance.
-func NewRouterRunner(router Router) *RouterRunner {
-	return &RouterRunner{router: router}
-}
+// NewRouterRunner creates new Runner executing the given http Router.
+func NewRouterRunner(router Router) Runner {
+	return NewCustomRunner(func(ctx context.Context, _ *di.Container) error {
+		if err := router.RunWithContext(ctx); err != nil {
+			return fmt.Errorf("run router: %w", err)
+		}
 
-// RouterRunner is a Service Runner, executing the gin router.
-// Uses the graceful.Graceful wrapper, see the docs here: https://github.com/gin-contrib/graceful.
-type RouterRunner struct {
-	router Router
-}
-
-func (r *RouterRunner) Run(ctx context.Context, _ *di.Container) error {
-	if err := r.router.RunWithContext(ctx); err != nil {
-		return fmt.Errorf("run router: %w", err)
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // NopRouter is a Router doing nothing.
